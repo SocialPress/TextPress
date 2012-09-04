@@ -1,4 +1,15 @@
 RewriteEngine on
+
+# Rewrite media request
+# Sub-Sites
+RewriteCond %{HTTP_HOST} img\.(.+)$ [NC]
+RewriteRule ^(.*)/(\d{4})-(\d{2})-(\d{2})/(.*)$ /config/$1/media/$2/$3/$5 [L]
+
+# Main Site
+RewriteCond %{HTTP_HOST} img\.(.+)$ [NC]
+RewriteRule ^(\d{4})-(\d{2})-(\d{2})/(.*)$ /media/$1/$2/$4 [L] 
+
+# Rewrite default
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ index.php [QSA,L]
+RewriteRule ^(.*)$ bootstrap.php [QSA,L]
 

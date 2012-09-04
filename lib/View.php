@@ -54,7 +54,7 @@ class View extends Slim_View
 		if(ob_get_length() !== false)
 	    	ob_flush();
 		ob_start();
-		extract(array('content' => $content, 'global' => $this->global));
+		//extract(array('content' => $content, 'global' => $this->global)); // Removed
 		if($this->layout){
 			$layoutPath = $this->getTemplatesDirectory() . '/' . ltrim($this->layout, '/');
 			if ( !file_exists($layoutPath) ) {

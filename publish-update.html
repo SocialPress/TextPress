@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Demo - Post Update</title>
+
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        div#gallery a img{
+            padding-right: 4px;
+            max-width: 80px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+      <div class="content">
+        <div class="row">
+          <div class="span12">
+            <h1>SocialPress Demo - Page Update</h1>
+          </div>
+        </div>
+        <div class="row">
+          <div class="span8">
+            <!-- Form  -->
+            <form class="form">
+                <fieldset>
+                    <!-- Alerts -->
+                    <div class="alert" id ="main-alert-box" style="display: none;">
+                        <button type="button" class="close" data-dismiss="alert">x</button>
+                        <span id="response-message"></span>
+                    </div>
+                    <div class="control-group">
+                        <h3>Post Update To <small>Page <span id="update-slug"></span></small></h3>
+                        <div class="controls">
+                          <select class='span8' id="selectPage">
+                            <!-- TODO: revise this logic -->
+                            <option value="">Main Site</option>
+                            <option value="demo-one">Demo Page One</option>
+                            <option value="demo-two">Demo Page Two</option>
+                          </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h3>Headline <small>Choose a Title for your update.</small></h3>
+                        <div class="controls">
+                            <div class="controls">
+                                <input class="span8" id="title" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h3>Copy <small>Page Update. Min 75 words Max 250 words</small></h3>
+                        <div class="controls" id="">
+                            <textarea class="span8" id='copy'></textarea>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h3>Execrpt <small>Summary for page update (120 chars max)</small></h3>
+                        <div class="controls" id="">
+                            <textarea class="span8" id='summary'></textarea>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h3>Photo <small>Update image (optional)</small></h3>
+                        <div class="controls input-append">
+                            <input class="span7 uneditable-input" id="photoUrl" /><button id="upload-image" class="btn" type="button">Upload</button>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <span class="pull-right">
+                        <button type="submit" class="btn btn-primary" id="post">POST</button>
+                        <button class="btn">Cancel</button>
+                        </span>
+                        <strong>Post Date: (<span id="post-date"></strong>)</h3>
+                    </div>
+                </fieldset>
+            </form>
+          </div>
+          <div class="span4">
+            <h3>Info <small>Help</small></h3>
+            <p></p>
+            <h4>Media
+            <select class='span2' id="galleryList">
+            </select></h4>
+            <div id="gallery"></div>
+          </div>
+        </div>
+      </div>
+      <footer>
+        <p>Powered by SocialPress &copy; <a href="http://companygateways.com" target="_blank">Company Gateways </a>2012</p>
+      </footer>
+    </div> <!-- /container -->
+    <!-- Gallery Modal -->
+    <div class="modal hide fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">Image Upload</h3>
+    </div>
+    <div class="modal-open">
+        <form class="form" id="imageform" method="post" enctype="multipart/form-data" action='/api/post/media'>
+            <fieldset>
+                <input type="hidden" id="gallery-page"/>
+                <input type="hidden" id="gallery-date"/>
+                <div class="control-group">
+                    <label class="control-label">Title <small>Choose a Title for your image.</label></h3>
+                    <div class="controls">
+                        <div class="controls">
+                            <input class="span6" id="image-title" />
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Description <small>Choose a Description for your image.</small></label>
+                    <div class="controls" id="">
+                        <textarea class="span6" id='image-description'></textarea>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Image <small>Upload your image</small></label>
+                    <div class="controls">
+                        <div class="controls">
+                            <input class="span6" type="file" name="imageFile" id="imageFile" />
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </form>        
+        
+        <div id='preview'></div>
+        
+    </div>
+    <div class="modal-footer">
+    <button id="attach-image" class="btn btn-primary">Attach</button>
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    </div>
+    </div>
+
+    <script type="text/javascript" src="/assets/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="/assets/js/jquery.form.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script src="/assets/editors/nicEdit.js"></script>
+    <script type="text/javascript">
+
+    
+        // set date
+        var now = new Date().toISOString();
+        var mediaDate = now.substr(0 ,7);
+        var site = '';
+        $(document).ready(function() {
+            
+            // ---------- UI EVENTS ---------- //
+            $('#post-date').text(now.substr(0 ,10));
+
+            $('#selectPage').live('change', function(){
+                site = $('#selectPage').val();
+                fetchGallery(site);
+            });
+            // display slug
+            $('#title').change(function () { $('#update-slug').text(createSlug($('#title').val())); });
+            // update summary
+            $('#summary').focusin(function() {
+                execrpt = $('#summary').val();
+                //alert(execrpt);
+                if(execrpt === '') $('#summary').val(createExcerpt(nicEditors.findEditor('copy').getContent(), 120));
+            });
+
+            // Get list of galleries
+            fetchGallery(site);
+            // start the ajax process
+
+            // Form Update Event (submit)
+            $('#post').click(function () {
+                // check for media
+                if($('#photoUrl').val() !== ""){
+                    postMedia = [{'type':'image', 'src':$('#photoUrl').val()}];
+                }
+                else{
+                    postMedia = [];
+                }
+                // Build Json
+                var dataEnvelope = {
+                    //'page':$('#selectPage').val(),
+                    'type':'article',
+                    'data':[
+                        {
+                         'title':$('#title').val(),
+                         'slug':createSlug($('#title').val()),
+                         'author':'', // 
+                         'copy':nicEditors.findEditor('copy').getContent(),
+                         'excerpt':$('#summary').val(),
+                         'media': postMedia,
+                         'date': now
+                        }
+                    ]
+                };
+
+                page = $('#selectPage').val();
+                if(page !== ''){
+                    api = '/api/post/update/'+page;
+                }
+                else{
+                    api = '/api/post/update';
+                }
+                // start the ajax process
+                
+                $.ajax({
+                    url: api, // service endpoint
+                    type: "POST",
+                    dataType: "json",
+                    data: JSON.stringify(dataEnvelope),
+                    cache: false,
+                    success: function (response) {
+                        // clear any old messages
+                        $('#response-message').empty();
+                        if(response.status === 'ok'){
+                            // signal sucsess
+                            $('#response-message').append('<strong>Success</strong>');
+                        }
+                        else{
+                            $('#response-message').append('<strong>Error</strong>');
+                        }
+                        $.each(response.message, function (index, message){
+                            $('#response-message').append('<p>'+message+'</p>');
+                        });
+                        $('#main-alert-box').show();
+                        // reset form
+                        resetForm();
+                    },
+                    failure: function(errMsg) { alert(errMsg); }
+
+                });
+                return false;
+            });
+
+            // ---------- Editors ---------- //
+            new nicEditor({iconsPath:'/assets/editors/nicEditorIcons.gif', buttonList : ['bold','italic','underline','strikeThrough','subscript','superscript','html']}).panelInstance('copy');
+            //$('#copy').redactor(); // redactorjs.com
+
+            // ---------- Upload image modal ---------- //
+            $('#upload-image').live('click', function(){
+                // set defaults
+                $('#gallery-page').val($('#selectPage').val());
+                $('#gallery-date').val(mediaDate);
+                $('#image-title').val($('#title').val());
+                $('#image-description').val($('#summary').val());
+                $('#imageModal').modal('show');
+            });
+            // ---------- Upload Image Event -----------//
+            $('#attach-image').live('click', function(){
+                page = $('#selectPage').val();
+                if(page !== ''){
+                    api = '/api/post/media/'+page;
+                }
+                else{
+                    api = '/api/post/media';
+                }
+
+                // update gallery
+                $('#imageform').ajaxForm(
+                    {
+                        url: api,
+                        data: {
+                            date: $('#gallery-date').val(),
+                            title: $('#image-title').val(),
+                            description: $('#image-description').val()
+                        }, 
+                        target: '#preview',
+                        success: function(response) {
+                                // assign link
+                                $('#photoUrl').val(response.data[0].mediaLink);
+                        }
+                    }
+                ).submit();
+                // close modal
+                $('#imageModal').modal('hide');
+                
+            });
+
+        });
+
+
+        function createExcerpt(text, length) {
+            var item_html = text; //
+            item_html = item_html.replace(/<\/?[^>]+>/gi, ''); //replace html tags
+            item_html = jQuery.trim(item_html);  //trim whitespace
+            return (item_html.substring(0,length));  //update the html on page
+        }
+
+
+        function createSlug(str){
+            // Build Slug
+            var slug = str;
+            slug = slug.replace(/^\s+|\s+$/g, ''); // trim
+            slug = slug.toLowerCase();
+            slug = slug.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+                .replace(/\s+/g, '-') // collapse whitespace and replace by -
+                .replace(/-+/g, '-'); // collapse dashes
+            //alert(str);
+            return slug;
+        }
+
+        // Fetch gallery 
+        function fetchGallery(site){
+            if(site !== ''){
+                api = '/api/galleries/'+site;
+            }
+            else{
+                api = '/api/galleries';
+            }
+            $.ajax({
+                url: api, // service endpoint
+                type: "GET",
+                cache: false,
+                success: function (response) {
+                    var galleryList = $('#galleryList');
+                    galleryList.find('option').remove().end();
+                    galleryList.append('<option value="" selected>Select Gallery</option>');
+                    $.each(response.data, function (index, file){
+                        //url = photos.domain+photo.uri;
+                        galleryList.append('<option value="'+file.substring(0,7)+'">'+file.substring(0,7)+'</option>');
+                        
+                    });
+                    // assign click event
+                    galleryList.live('change', function(e) {
+                        $('#gallery').empty();
+                        fetchGalleryImages(site, galleryList.val());
+                    });
+                    
+                    //fetchGalleryImages(site, galleryList.val());
+                },
+                failure: function(errMsg) { alert(errMsg); }
+
+            });
+            
+        
+        }
+        // Fetch gallery images
+        function fetchGalleryImages(site, id){
+            if(site !== ''){
+                api = '/api/gallery/'+site;
+            }
+            else{
+                api = '/api/gallery';
+            }
+            var gallery = $('#gallery');
+            gallery.find('a').remove().end();
+            if(id === '') return;
+            // start the ajax process
+            $.ajax({
+                url: api+'/'+id+'', // service endpoint
+                type: "GET",
+                //dataType: "json",
+                //data: JSON.stringify(dataEnvelope),
+                cache: false,
+                success: function (response) {
+                    
+                    var photos = jQuery.parseJSON(response.data[0]);
+                    // build photo display
+                    $.each(photos.images, function (index, photo){
+                        url = photos.domain+photo.uri;
+                        $('<a rel="gallery"/>')
+                        .append($('<img class="img-polaroid">').prop('src', url))
+                        //.prop('href', url)
+                        .prop('title', photo.title)
+                        .live('click', function(e) {
+                        	//this.perventDefault();
+                        	alert('click');
+                        	return false;
+                        })
+                        .appendTo(gallery);
+                    });
+
+                    },
+                failure: function(errMsg) { alert(errMsg); }
+
+            });
+
+        }
+        // reset form
+        function resetForm(){
+
+            $('#title').val('');
+            $('#copy').val('');
+            $('#summary').val('');
+            $('#photoUrl').val('');
+            $('#update-slug').empty();
+            // work around to clear editor
+            $('.redactor_editor').empty().append('<p></p>');
+
+        }
+
+    </script>
+</body>
+</html>

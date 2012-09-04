@@ -1,13 +1,10 @@
 html { margin: 20px }
 body {
   margin: 0 auto;
-  font-family: 'Baskerville', Georgia, Times, serif;
-  font-size: 20px;
-  line-height: 30px;
-  padding: 15px;
 }
 header, footer, section, article {
 	display: block;
+	
 }
 #content {
 }
@@ -30,16 +27,30 @@ header, footer, section, article {
   line-height: 43px;
   margin-right: 30px;
 }
+div.well ul.nav li a{
+  font-size: 24px;
+  line-height: 30px;
+  color: #0088CC;
+}
 a {
   color: #b83000;
 }
-h1 a {
+
+h2 a {
   color: black;
   text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
 }
+
+#gallery a img{
+  height: auto;
+  max-width: 150px;
+  padding-bottom: 3px;
+  padding-right: 5px;
+}
+
 body > header > h1 {
 	border-left: 30px solid black;
 	padding-left: 30px;
@@ -58,6 +69,7 @@ body > header > h1 {
 }
 .post {
 	margin-bottom: 30px;
+	width: 98%;
 }
 .post:last-child {
   margin-bottom: 10px;
@@ -67,6 +79,12 @@ body > header > h1 {
   font-family: 'Baskerville', Georgia, Times, serif;
   font-size: 20px;
   line-height: 30px;
+}
+
+.post .share{
+  background: url("../img/share-knowledge.png") no-repeat scroll 0 0 transparent;
+  min-height: 56px;
+  padding-top: 21px;
 }
 .post .more {
   margin-top: -10px;
@@ -89,16 +107,14 @@ h1, h2, h3, h4 {
   margin: 0;
   font-weight: bold;
 }
-ul, li {
+
+div.archives ul li {
   list-style-type: disc;
   font-size: 20px;
   line-height: 30px;
 }
 ul ul li, ol ul{
-  list-style-type: circle;
-}
-code {
-  font-family: 'Anonymous Pro', 'Bitstream Vera Sans', 'Monaco', Courier, mono;
+  list-style-type: lower-greek;
 }
 pre {
   padding: 20px;
@@ -122,10 +138,10 @@ body > footer {
 a.brand{
   font-size : 26px !important;
   padding-bottom: 8px !important;
-  color:#ddd !important;
+  color:#fff !important;
 }
 a.brand:hover{
-  color:#fff !important;
+  color:#ddd !important;
 }
 .archives a{
   font-size : 16px  ;
@@ -138,23 +154,85 @@ a.brand:hover{
   font-size:16px;
 }
 
+
+.social-box {
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.social-box img {
+    float: left;
+}
+.social-box-text {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #D2D2D2;
+    border-radius: 6px 6px 6px 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    float: right;
+    padding: 4px 10px 6px;
+    position: relative;
+    width: 212px;
+}
+.social-box-descrip {
+    color: #777777;
+    display: block;
+    font-family: 'PT Sans';
+    font-size: 16px;
+    margin-bottom: 1px;
+}
+.social-box-count {
+    color: #999999;
+    font-size: 11px;
+}
+.social-arrow {
+    background: url("/assets/img/social-arrow.png") no-repeat scroll 0 0 transparent;
+    display: block;
+    height: 12px;
+    left: -8px;
+    position: absolute;
+    top: 17px;
+    width: 8px;
+}
+div.well address{
+  font-size: 18px !important;
+  line-height: 26px !important;
+}
+i{margin-right: 3px;}
+.subnav {
+    background-color: #EEEEEE;
+    background-image: -moz-linear-gradient(center top , #F5F5F5 0%, #EEEEEE 100%);
+    background-repeat: repeat-x;
+    border: 1px solid #E5E5E5;
+    border-radius: 4px 4px 4px 4px;
+    height: 36px;
+    width: 100%;
+    margin-bottom: 10px;
+     margin-top: 16px
+}
 /* Override some defaults */
+
+.navbar-inner{
+  
+  background-color: #000 !important;
+  background-image: none !important;
+  filter: none !important;
+}
+
       html, body {
-        background-color: #eee;
+        background-color: #333333;
       }
       .container > footer p {
         text-align: center; /* center align it with the container */
         font-family: Baskerville, Georgia, Times, serif;
       }
       .container {
-        width: 760px; /* downsize our container to make the content feel a bit tighter and more cohesive. NOTE: this removes two full columns from the grid, meaning you only go to 14 columns and not 16. */
+
       }
 
       /* The white background content wrapper */
       .container > .content {
         background-color: #fff;
         padding: 20px;
-        margin: 0 -20px; /* negative indent the amount of the padding to maintain the grid system */
+        margin: 10px -20px; /* negative indent the amount of the padding to maintain the grid system */
         -webkit-border-radius: 0 0 6px 6px;
            -moz-border-radius: 0 0 6px 6px;
                 border-radius: 0 0 6px 6px;
@@ -187,10 +265,21 @@ a.brand:hover{
       }
 .hero-unit{
   text-align: center;
+  padding: 40px;
+  
+}
+.hero-unit div.inner{
+  background-color: #2C2C2C;
+  padding: 10px 5px;
+  border-radius: 6px 6px 6px 6px;
+  -webkit-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
 }
 .hero-unit p{
   font-family: Georgia;
   font-size: 30px;
+  color: #ddd;
 }
 .hero-unit .small{
   font-size : 18px;
@@ -200,4 +289,11 @@ a.brand:hover{
 }
 .white{
   color:white;
+}
+
+.navbar .nav > li > a {
+    padding: 12px 10px 11px !important;
+}
+.nav-pills .active > a, .nav-pills .active > a:hover {
+    background-color: #333333;
 }

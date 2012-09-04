@@ -1,3 +1,3 @@
-# TextPress
+# SocialPress
 
-Thank you for visiting TextPress. It is a simple, easy to use PHP flat-file blog engine built on top of Slim Framework [Slim Framework](http://slimframework.com) released under the MIT public license.
+"Social Press" a simple text blogging engine based on TextPress by Shameer C. The code has been modified to support multiple blogs under a single domain and provides social tie-ins and sharing. The goal of this project is to provide a simple blogging engine with social channel broadcasting for small business

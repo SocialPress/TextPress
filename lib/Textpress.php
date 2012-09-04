@@ -1,9 +1,9 @@
 <?php
  /**
  * Textpress - PHP Flat file blog engine
- * Textpress is a flat file blog engine, built on top of Slim inspired from Toto. 
+ * Textpress is a flat file blog engine, built on top of Slim inspired from Toto.
  * Now it have only a limited set of features and url options.
- * 
+ *
  * @author 		Shameer C <me@shameerc.com>
  * @copyright   2012 - Shameer C
  * @version 	Beta
@@ -34,7 +34,7 @@
 /**
 * Textpress
 * @author 		Shameer
-* @since 		Alpha 
+* @since 		Alpha
 */
 class Textpress
 {
@@ -44,17 +44,24 @@ class Textpress
 	* @var array
 	*/
 	public $fileNames = array();
-	
+
 	/**
 	* Article location
 	*
-	* @var string 
+	* @var string
 	*/
 	private $_articlePath;
 
 	/**
+	* Article location
+	*
+	* @var string
+	*/
+	private $_galleryPath;
+
+	/**
 	* Do we need markdown parser?
-	* 
+	*
 	* @var bool
 	*/
 	public $markdown;
@@ -62,10 +69,11 @@ class Textpress
 	/**
 	* Articles
 	*
-	* @var array 
+	* @var array
 	*/
 	public $allArticles = array();
-	
+
+
 	/**
 	* View data
 	*
@@ -89,7 +97,7 @@ class Textpress
 
 	/**
 	* Constructor
-	* 
+	*
 	* @param Slim $slim Object of slim
 	*/
 	public function __construct(Slim $slim)
@@ -103,15 +111,18 @@ class Textpress
 	*/
 	public function init()
 	{
-		
+
 		if(!is_dir($this->slim->config('article.path'))){
 			throw new Exception('Article location is invalid');
 		}
-		$this->markdown 	= $this->slim->config('markdown');
+		//$this->markdown = $this->slim->config('markdown');
 		$this->_articlePath = $this->slim->config('article.path');
-		if($this->markdown){
-			require_once __DIR__ . '/markdown.php';
-		}
+		$this->_galleryPath = $this->slim->config('media.path');
+		$this->_pagePath = $this->slim->config('page.path');
+		// Remove logic for socialpress
+//		if($this->markdown){
+//			require_once __DIR__ . '/markdown.php';
+//		}
 		$this->setViewConfig();
 		$this->setRoutes();
 		$self = $this;
@@ -121,7 +132,7 @@ class Textpress
 			$this->slim->notFound(function() use($self){
 				header("HTTP/1.0 404 Not Found");
 				$self->setLayout();
-				$self->slim->render('404');				
+				$self->slim->render('404');
 			});
 		}
 		catch(Exception $e){}
@@ -130,18 +141,23 @@ class Textpress
 	/**
 	* @return array Article file names
 	*/
-	public function getfileNames()
+	public function getfileNames($filePath)
 	{
+		// review logic.. 
 		if (empty($this->fileNames))
 		{
-			$iterator = new DirectoryIterator($this->_articlePath);
-			$files = new RegexIterator($iterator,'/\\'.$this->slim->config('file.extension').'$/'); 
+			// review logic for sub-directories in the future
+			$iterator = new DirectoryIterator($filePath);
+			$files = new RegexIterator($iterator,'/\\'.$this->slim->config('file.extension').'$/');
+			// 
 			foreach($files as $file){
 				if($file->isFile()){
-					$this->fileNames[] = $file->getFilename();
+					$this->fileNames[$file->getMTime()] = $file->getFilename();
 				}
 			}
-			rsort($this->fileNames);
+			if(!empty($this->fileNames)){
+				krsort($this->fileNames);
+			}
 		}
 		return $this->fileNames;
 	}
@@ -150,31 +166,46 @@ class Textpress
 	* Loads an article
 	*
 	* @param string $fileName Name of article file
-	* @param bool $isArticle For requests to article it should 
-	*						 merge meta data to global data
-	* @return array 
+	* @param bool $isArticle For requests to article it should
+	* merge meta data to global data
+	* @return array
 	*/
 	public function loadArticle($fileName)
 	{
 		if(!($fullPath = $this->getFullPath($fileName))){
-			return false;
+			// must be a page
+			$fullPath = $this->_articlePath.'/'.$fileName;
 		}
 		$handle 	= fopen($fullPath, 'r');
 		$content 	= stream_get_contents($handle);
-		$sections 	= explode("\n\n", $content);
-		$meta 		= json_decode(array_shift($sections),true);
-		$contents 	= implode("\n\n",$sections);
-		if($this->markdown){ 
-			$contents = Markdown($contents);
-		}
-		$slug = (array_key_exists('slug', $meta) && $meta['slug'] !='') 
-					? $meta['slug']
-					: $this->slugize($meta['title']);
-		$article 	= array(
-						'meta' => $meta, 
-						'content' => $contents,
-						'url'=>$this->getArticleUrl($meta['date'],$slug)
-						);
+		// Modified to use pure json data structure
+		$post = json_decode($content);
+		// close handle ??/
+		// start building meta
+		$title = $post->title;
+		$slug = (isset($post->slug) && $post->slug !='') ? $post->slug : $this->slugize($post->title);
+		$tags = (isset($post->tags) && $post->tags !='') ? $post->tags : '';
+		$media = (isset($post->media) && !empty($post->media)) ? $post->media : null;
+		$excerpt = (isset($post->excerpt) && $post->excerpt !='') ? $post->excerpt : substr(strip_tags($post->copy), 0,120);
+
+		$meta = array('slug'=>$slug,
+			      'title'=>$title,
+			      'description'=>$excerpt,
+			      'keywords'=>$tags,
+			      'date'=>$post->date);
+
+		// Build Content
+		$contents = $post->copy; // get copy and process
+		// Remove logic for socialpress		
+//		if($this->markdown){
+//			$contents = Markdown($post->copy);
+//		}
+		$article = array('meta' => $post,
+				 'content' => $contents,
+				 'excerpt'=> $excerpt,
+				 'media'=> $media,
+				 'url'=>$this->getArticleUrl($post->date,$slug)
+				);
 		return $this->viewData['article'] = $article;
 	}
 
@@ -189,7 +220,7 @@ class Textpress
 			$this->notFound();
 		}
 		$article = $this->allArticles[$url];
-		$this->slim->view()->appendGlobalData($article['meta']); 
+		$this->slim->view()->appendGlobalData((array)$article['meta']);
 		$this->viewData['article'] = $article;
 	}
 
@@ -200,7 +231,7 @@ class Textpress
 	*/
 	public function loadArticles($numbers = -1)
 	{
-		$filenames = $this->getfileNames();
+		$filenames = $this->getfileNames($this->_articlePath);
 		$i = 0;
 		$allArticles = array();
 		foreach($filenames as $filename){
@@ -208,31 +239,32 @@ class Textpress
 				break;
 			}
 			$article = $this->loadArticle($filename);
-			$slug = isset($article['meta']['slug']) 
-						? $article['meta']['slug']
-						: $this->slugize($article['meta']['title']);
+
 			$prefix = $this->slim->config('prefix');
-			$url  	= $this->getArticleUrl($article['meta']['date'],$slug);
+			$url = $article['url'];
 			$allArticles[$url] = $article;
 			$i++;
 		}
 		$this->allArticles = $allArticles;
-		return $this->viewData['articles'] = $this->sortArticles($allArticles);
+
+		return $this->viewData['articles'] = $this->allArticles;
 	}
 
 	/**
-	* Sort articles based on date
+	* Sort articles based on url
 	*
 	* @param array $articles Array of articles
 	*/
 	public function sortArticles($articles)
 	{
-		$results	= array();
+		// REMOVE - LOGIC PLACED IN 'getfileNames'
+		$results = array();
 		foreach($articles as $article){
-			$date = $this->dateFormat($article['meta']['date'],'Y-m-d');
-			$results[$date] = $article;
+			$key = $article['url'];
+			$results[$key] = $article;
 		}
 		krsort($results);
+		//echo var_dump($results);
 		return $results;
 	}
 
@@ -253,9 +285,6 @@ class Textpress
 			case 2 :
 				$this->setArchives(implode('-',$route),'Y-m');
 				break;
-			case 3 :
-				$this->setArchives(implode('-',$route),'Y-m-d');
-				break;
 		}
 		return $this->viewData['archives'];
 	}
@@ -265,7 +294,7 @@ class Textpress
 	*
 	* @param  Date $date from arguments passed via rout
 	* @param  String $format Date format
-	* @return array archives 
+	* @return array archives
 	*/
 	public function setArchives($date=null,$format='')
 	{
@@ -276,12 +305,51 @@ class Textpress
 		}
 		else{
 			foreach($this->allArticles as $article){
-				if($date == $this->dateFormat($article['meta']['date'],$format))
-					$archives[] = $article;
+				if($date == $this->dateFormat($article['meta']->date,$format))
+				$archives[] = $article;
 			}
 		}
 		return $this->viewData['archives'] = $archives;
 	}
+
+
+	/**
+	* Loads all galleries
+	*
+	* @return array Galleries
+	*/
+	public function loadGalleries($args, $numbers = -1)
+	{
+
+		$allGalleries = array();
+		$filenames = $this->getfileNames($this->_galleryPath); // get gallery file names (sorted)
+		$i = 0;
+		foreach($filenames as $filename){
+			if ($numbers > -1 && $i == $numbers) {
+				break;
+			}
+			// split out the year month
+			$yrMo = substr($filename, 0, 7);
+
+			$allGalleries[$yrMo] = $this->_galleryPath.'/'.$filename;
+		}
+		if(!empty($allGalleries)){
+			if(!empty($args)){
+				// Check Date args
+				$key = implode('-',$args);
+				//echo var_dump(implode('-',$args));
+				$this->viewData['gallery'] = $allGalleries[$key];
+			}
+			else{
+				// Set Gallery to view
+				$this->viewData['gallery'] = array_shift($allGalleries);
+			}
+		}
+		$this->viewData['galleries'] = $allGalleries;
+
+	}
+
+
 
 	/**
 	* Custom 404 handler
@@ -305,7 +373,7 @@ class Textpress
 	{
 		$format = is_null($format) ? $this->slim->config('date.format') : $format;
 		$date  = new DateTime($date);
-		return $date->format($format);	
+		return $date->format($format);
 	}
 
 	/**
@@ -316,7 +384,7 @@ class Textpress
 	*/
 	public function getFullPath($path)
 	{
-		if(in_array($path , $this->getFileNames())){
+		if(in_array($path , $this->fileNames)){
 			return $this->_articlePath . '/' . $path ;
 		}
 		return false;
@@ -329,32 +397,37 @@ class Textpress
 	public function setRoutes()
 	{
 		$this->_routes = $this->slim->config('routes');
-		$self = $this; 
+		$self = $this;
 		$prefix = $self->slim->config('prefix');
 		foreach ($this->_routes as $key => $value) {
 			$this->slim->map($prefix . $value['route'],function() use($self,$key,$value){
 				$args = func_get_args();
+
 				if(isset($value['layout']) && !$value['layout']){
 					$self->enableLayout = false;
 				}
 				else{
 					$self->setLayout();
 				}
-				
-				// load all articles
-				// This isn't necessary for route to an article though
-				// will help to generate tag cloud/ category listing
-				$self->loadArticles();
-
 				//set view data for article  and archives routes
+				$self->viewData['path'] = $key;
 				if($key == '__root__' || $key == 'rss' || $key == 'atom'){
-					$self->allArticles = array_slice($self->allArticles, 0, 10);
+					$self->loadArticles();
+					$self->allArticles = $self->allArticles;
 				}
-				elseif($key== 'article'){
+				elseif($key == 'article'){
+					$self->loadArticles();
 					$self->setArticle($self->getPath($args));
 				}
-				elseif($key =='archives'){
+				elseif($key == 'about'){
+					$self->loadArticle('about.json');
+				}
+				elseif($key == 'archives'){
+					$self->loadArticles();
 					$self->loadArchives($args);
+				}
+				elseif($key == 'gallery'){
+					$self->loadGalleries($args);
 				}
 				// render the template file
 				$self->render($value['template']);
@@ -369,7 +442,7 @@ class Textpress
 	/**
 	* Constructs file name from route params
 	* @param $params Array route parameters
-	* @return String file name 
+	* @return String file name
 	*/
 	public function getPath($params)
 	{
@@ -390,14 +463,14 @@ class Textpress
 		$date = $date->format('Y-m-d');
 		$dateSplit = explode('-', $date);
 		return $this->slim->urlFor(
-					 			'article',
-								array(
-									'year'=>$dateSplit[0],
-									'month'=>$dateSplit[1],
-									'date' => $dateSplit[2],
-									'article'=>$slug
-								)
-							) ;
+				'article',
+				array(
+					'year'=>$dateSplit[0],
+					'month'=>$dateSplit[1],
+					'date' => $dateSplit[2],
+					'article'=>$slug
+				)
+			) ;
 	}
 
 	/**
@@ -408,7 +481,7 @@ class Textpress
 	public function slugize($str)
 	{
 		$str = strtolower(trim($str));
- 		
+
  		$chars = array("ä", "ö", "ü", "ß");
    		$replacements = array("ae", "oe", "ue", "ss");
 		$str = str_replace($chars, $replacements, $str);
@@ -419,16 +492,17 @@ class Textpress
 
 		$pattern = array(":", "!", "?", ".", "/", "'");
 		$str = str_replace($pattern, "", $str);
-		
+
 		$pattern = array("/[^a-z0-9-]/", "/-+/");
 		$str = preg_replace($pattern, "-", $str);
-		
+
 		return $str;
     }
 
 	/**
 	* Set config values to View
-	* @todo make it comfortable
+	* $this->data['global']
+	* Added additional 'Global' items
 	*/
 	public function setViewConfig()
 	{
@@ -437,11 +511,25 @@ class Textpress
 				'author.name' => $this->slim->config('author.name'),
 				'site.name' => $this->slim->config('site.name'),
 				'site.title' => $this->slim->config('site.title'),
+				'site.description' => $this->slim->config('site.description'),
+				'site.image' => $this->slim->config('site.image'),
+				'body.background' => $this->slim->config('body.background'),
+				'header.background' => $this->slim->config('header.background'),
+				'location.phonenumber' => $this->slim->config('location.phonenumber'),
+				'location.address' => $this->slim->config('location.address'),
+				'location.locality' => $this->slim->config('location.locality'),
+				'location.region' => $this->slim->config('location.region'),
+				'location.postalcode' => $this->slim->config('location.postalcode'),
+				'location.country' => $this->slim->config('location.country'),
+				'location.website' => $this->slim->config('location.website'),
 				'disqus.username' => $this->slim->config('disqus.username'),
 				'base.directory' => $this->slim->config('base.directory'),
 				'google.analytics' => $this->slim->config('google.analytics'),
+				'google.map' => $this->slim->config('google.map'),
+				'channels' => $this->slim->config('channels'),
 				'prefix' => $this->slim->config('prefix'),
 			);
+		//echo var_dump($data);
 		$this->slim->view()->appendGlobalData($data);
 	}
 
@@ -471,7 +559,7 @@ class Textpress
 	public function render($template)
 	{
 		$this->slim->render($template,$this->getViewData());
-	}
+	}		
 
 	/**
 	* Run slim

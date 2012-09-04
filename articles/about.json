@@ -1,0 +1,9 @@
+{
+  "title" : "About",
+  "date" : "08-01-2012",
+  "media": [],
+  "slug" : "about",
+  "author" : "SocialPress",
+  "excerpt": "TextPress is a simple, light weight blogging engine for PHP geeks, which can be hosted in PHP clouds like PHP Fog.",
+  "copy":"TextPress is a simple, light weight blogging engine for PHP geeks, which can be hosted in PHP clouds like PHP Fog. Easy integration with disqus commenting system."
+}
