@@ -165,7 +165,7 @@ $app->post('/post/media(/:site)', function($site='') use ($app) {
 	    // create a new media file
 	    $handle = fopen($mediaPath, 'x');
 	    $mediaData = array(
-		'domain' => 'http://img.socialpress.com/',
+		'domain' => '',
 		'date' => $galleryDate,
 		'images' => array()
 	    );
